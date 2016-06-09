@@ -5,11 +5,63 @@
 
 // Allow Python Buffers
 %include <pybuffer.i>
+%include <cdata.i>
 
 // Type Maps
 /* Convert from C --> Python */
 %typemap(out) HWND {
     $result = PyInt_FromLong((long)$1);
+}
+%typemap(out) duint {
+    $result = PyLong_FromLong((long)$1);
+}
+/* Convert from Python --> C */
+//%typemap(in) void* = char*;
+%typemap(in) duint {
+  $1 = (int) PyLong_AsLong($input);
+}
+%typemap(typecheck) duint = long;
+
+// We'll append the value to the current result which 
+// is guaranteed to be a List object by SWIG.
+%typemap(argout) duint* {
+  PyObject *o, *o2, *o3;
+  o = PyLong_FromLong(*$1);
+  if ((!$result) || ($result == Py_None)) {
+    $result = o;
+  } else {
+    if (!PyTuple_Check($result)) {
+      PyObject *o2 = $result;
+      $result = PyTuple_New(1);
+      PyTuple_SetItem($result,0,o2);
+    }
+    o3 = PyTuple_New(1);
+    PyTuple_SetItem(o3,0,o);
+    o2 = $result;
+    $result = PySequence_Concat(o2,o3);
+    Py_DECREF(o2);
+    Py_DECREF(o3);
+  }
+}
+
+%typemap(argout) int* {
+  PyObject *o, *o2, *o3;
+  o = PyLong_FromLong(*$1);
+  if ((!$result) || ($result == Py_None)) {
+    $result = o;
+  } else {
+    if (!PyTuple_Check($result)) {
+      PyObject *o2 = $result;
+      $result = PyTuple_New(1);
+      PyTuple_SetItem($result,0,o2);
+    }
+    o3 = PyTuple_New(1);
+    PyTuple_SetItem(o3,0,o);
+    o2 = $result;
+    $result = PySequence_Concat(o2,o3);
+    Py_DECREF(o2);
+    Py_DECREF(o3);
+  }
 }
 
 //Debugger functions
