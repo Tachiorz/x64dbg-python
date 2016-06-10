@@ -13,20 +13,33 @@
     $result = PyInt_FromLong((long)$1);
 }
 %typemap(out) duint {
-    $result = PyLong_FromLong((long)$1);
+#if defined(SWIGWORDSIZE64)
+    $result = PyLong_FromUnsignedLongLong((unsigned long long)$1);
+#else
+    $result = PyLong_FromUnsignedLong((unsigned long)$1);
+#endif
 }
 /* Convert from Python --> C */
 //%typemap(in) void* = char*;
 %typemap(in) duint {
   $1 = (int) PyLong_AsLong($input);
 }
+#if defined(SWIGWORDSIZE64)
+    %typemap(typecheck) duint = long long;
+#else
+    %typemap(typecheck) duint = long;
+#endif
 %typemap(typecheck) duint = long;
 
 // We'll append the value to the current result which 
 // is guaranteed to be a List object by SWIG.
 %typemap(argout) duint* {
   PyObject *o, *o2, *o3;
+#if defined(SWIGWORDSIZE64)
+  o = PyLong_FromLongLong(*$1);
+#else
   o = PyLong_FromLong(*$1);
+#endif
   if ((!$result) || ($result == Py_None)) {
     $result = o;
   } else {
